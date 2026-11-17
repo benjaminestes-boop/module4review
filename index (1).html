@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Function Flight Jr.</title>
+<style>
+:root{
+  --paper:#e9f3f7;
+  --card:#ffffff;
+  --ink:#16253a;
+  --muted:#52667a;
+  --rule:#c9d9e1;
+  --chart:#1d5aa6;
+  --chart-ink:#ffffff;
+  --magenta:#b0267a;
+  --sun:#f3b400;
+  --good:#1d5aa6;
+  --good-bg:#e0ecfa;
+  --bad:#a14d00;
+  --bad-bg:#fcebd6;
+  --grid:#d5e2e8;
+  --axis:#2f4459;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0f1b25;
+    --card:#172633;
+    --ink:#e6eef4;
+    --muted:#9db1c2;
+    --rule:#2c3f50;
+    --chart:#72aaf0;
+    --chart-ink:#0b1620;
+    --magenta:#ef73ba;
+    --sun:#ffd35a;
+    --good:#8fc0f5;
+    --good-bg:#17314d;
+    --bad:#f4b06a;
+    --bad-bg:#3b2911;
+    --grid:#263848;
+    --axis:#b6c6d4;
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded","Nunito","Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  font-size:19px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column;
+}
+main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:18px 14px 6px}
+h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px}
+h2{font-size:1.5rem;line-height:1.2;margin:0}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:20px;margin-bottom:14px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.levelname{font-size:.95rem;color:var(--muted)}
+.stars{font-weight:700;font-size:1.15rem;white-space:nowrap}
+.task{font-size:1.4rem;font-weight:700;text-align:center;margin:8px 0 10px}
+.task .pairbig{color:var(--chart)}
+.rulebanner{text-align:center;border:4px solid var(--magenta);border-radius:18px;padding:10px 14px 12px;margin:6px 0 14px;background:var(--paper)}
+.rulebanner .rwords{font-size:1.3rem;font-weight:800;color:var(--ink)}
+.rulebanner .eqbig{font-size:3rem;font-weight:800;color:var(--magenta);line-height:1.15}
+.split{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:14px}
+.split>*{flex:1 1 300px;min-width:0}
+.graphtitle{text-align:center;font-weight:700;color:var(--muted);font-size:.95rem;margin-bottom:4px}
+.graph:not([tabindex="0"]){cursor:default}
+.ruletag{display:inline-block;border:3px solid var(--magenta);color:var(--magenta);border-radius:12px;padding:4px 14px;font-weight:800;font-size:1.25rem}
+.eq{font-size:.95rem;color:var(--muted);margin-top:4px}
+button{font:inherit;font-weight:700;border-radius:14px;border:3px solid var(--chart);padding:12px 22px;cursor:pointer;min-height:54px}
+.primary{background:var(--chart);color:var(--chart-ink)}
+.secondary{background:var(--card);color:var(--chart)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,svg:focus-visible{outline:3px solid var(--magenta);outline-offset:3px}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+/* rule machine */
+.machine{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+.mcol{text-align:center}
+.mlabel{font-size:.85rem;color:var(--muted)}
+.mbox{min-width:78px;height:70px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;padding:0 10px}
+.mbox.in{background:var(--paper);border:3px solid var(--rule)}
+.mbox.gear{border:3px solid var(--magenta);color:var(--magenta);font-size:1.15rem;min-width:130px;text-align:center;line-height:1.2}
+.mbox.out{background:var(--good-bg);border:3px dashed var(--chart);color:var(--chart)}
+.mbox.out.pop{border-style:solid;animation:pop .45s ease}
+.marrow{font-size:1.6rem;color:var(--muted)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+/* keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,64px);gap:8px;justify-content:center;margin-top:12px}
+.keypad button{padding:0;min-height:56px;font-size:1.4rem;background:var(--card);color:var(--ink);border-color:var(--rule)}
+.keypad button.ok{background:var(--chart);color:var(--chart-ink);border-color:var(--chart);font-size:1rem}
+/* table */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:320px}
+th,td{border:2px solid var(--rule);padding:8px;text-align:center;font-size:1.1rem}
+th{background:var(--paper)}
+th small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+tr.active td{background:var(--good-bg)}
+td.work{color:var(--muted)}
+td.filled{color:var(--chart);font-weight:700}
+/* pair chips */
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 10px}
+.chip{border:2px solid var(--rule);border-radius:999px;padding:4px 12px;font-weight:700}
+.chip.done{background:var(--chart);color:var(--chart-ink);border-color:var(--chart)}
+.chip.now{border-color:var(--magenta);color:var(--magenta);border-width:3px}
+/* feedback */
+.fb{border-radius:12px;padding:12px 14px;margin-top:14px;font-weight:600;border-left:7px solid}
+.fb.good{background:var(--good-bg);border-color:var(--good)}
+.fb.bad{background:var(--bad-bg);border-color:var(--bad)}
+.fb .icon{font-weight:800;margin-right:6px}
+.fb.good .icon{color:var(--good)}
+.fb.bad .icon{color:var(--bad)}
+/* graph */
+.graph{width:100%;max-width:400px;display:block;margin:0 auto;touch-action:manipulation;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.graph .grid{stroke:var(--grid);stroke-width:1.2}
+.graph .axis{stroke:var(--axis);stroke-width:2}
+.graph .tick{fill:var(--muted);font-size:12px;font-family:inherit}
+.graph .axlabel{fill:var(--axis);font-size:16px;font-weight:700;font-family:inherit}
+.graph .fline{stroke:var(--magenta);stroke-width:4;fill:none;stroke-linecap:round}
+.graph .fline.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.graph .arrfill{fill:var(--magenta)}
+.graph .axfill{fill:var(--axis)}
+.graph .pt{fill:var(--chart);stroke:var(--card);stroke-width:2.5}
+.graph .pt.pop{animation:ptpop .35s ease;transform-box:fill-box;transform-origin:center}
+@keyframes ptpop{0%{transform:scale(.3)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.graph .pt-off{fill:var(--bad);stroke:var(--card);stroke-width:2.5}
+.graph .wrong{stroke:var(--bad);stroke-width:3.5;stroke-linecap:round}
+.graph .guide{stroke:var(--chart);stroke-width:2.5;stroke-dasharray:6 5}
+.graph .guide-col{fill:var(--good-bg);opacity:.7}
+.graph .ptlabel{fill:var(--ink);font-size:15px;font-weight:800;font-family:inherit;paint-order:stroke;stroke:var(--card);stroke-width:5px}
+.graph .pv{fill:none;stroke:var(--magenta);stroke-width:2.5}
+.graph .pvlabel{fill:var(--magenta);font-size:14px;font-weight:800;font-family:inherit;paint-order:stroke;stroke:var(--card);stroke-width:5px}
+.graph .plane{fill:var(--chart);stroke:var(--card);stroke-width:1;opacity:0}
+.graph .ghost{fill:none;stroke:var(--magenta);stroke-width:2.5;stroke-dasharray:4 3}
+.tapnote{text-align:center;font-size:.9rem;color:var(--muted);margin-top:4px}
+/* route progress */
+.route{position:relative;height:44px;margin:8px 0 10px}
+.route .track{position:absolute;left:12px;right:12px;top:26px;border-top:3px dashed var(--rule)}
+.route .flown{position:absolute;left:12px;top:26px;border-top:3px solid var(--chart);transition:width .5s ease}
+.route .wp{position:absolute;top:20px;width:15px;height:15px;border-radius:50%;background:var(--card);border:3px solid var(--rule);transform:translateX(-50%)}
+.route .wp.done{border-color:var(--chart);background:var(--chart)}
+.route .rplane{position:absolute;top:0;font-size:26px;transform:translateX(-50%);transition:left .5s ease;line-height:1}
+.keyidea{font-size:1.3rem;line-height:1.5;border-left:7px solid var(--magenta);padding-left:14px;margin:14px 0}
+.big{font-size:3.6rem;font-weight:800;color:var(--chart);line-height:1}
+.bigstars{font-size:2.6rem;letter-spacing:6px;margin:8px 0}
+ul.scores{padding-left:22px;margin:10px 0}
+.legs{padding-left:22px;margin:6px 0 12px}
+footer{text-align:center;font-size:.78rem;color:var(--muted);padding:10px 16px 18px}
+@media (max-width:480px){
+  body{font-size:17px}
+  h1{font-size:2.1rem}
+  .card{padding:14px}
+  .mbox{min-width:64px;height:60px;font-size:1.7rem}
+  .mbox.gear{min-width:110px;font-size:1rem}
+  .marrow{font-size:1.2rem}
+  .rulebanner .eqbig{font-size:2.3rem}
+  .rulebanner .rwords{font-size:1.1rem}
+}
+@media (prefers-reduced-motion: reduce){
+  .route .flown,.route .rplane{transition:none}
+  .graph .fline.draw{animation:none;stroke-dashoffset:0}
+  .mbox.out.pop,.graph .pt.pop{animation:none}
+}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<footer>Learning activity created by B.Estes assisted with AI, used with permission.</footer>
+
+<script>
+/* ================= helpers ================= */
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rand(0,a.length-1)];
+const shuffle=arr=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=rand(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pair=(x,y)=>`(${x}, ${y})`;
+const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* rules kids can read: y = m·x + b, first quadrant only */
+const R={
+  add:b=>({m:1,b,name:`add ${b}`}),
+  sub:b=>({m:1,b:-b,name:`subtract ${b}`}),
+  mul:m=>({m,b:0,name:`multiply by ${m}`}),
+  mulAdd:()=>({m:2,b:1,name:'multiply by 2, then add 1'}),
+  half:()=>({m:0.5,b:0,name:'divide by 2'})
+};
+const EASY=[()=>R.add(rand(1,4)),()=>R.sub(rand(1,2))];
+const HARD=[()=>R.mul(2),()=>R.mulAdd(),()=>R.half(),()=>R.mul(3)];
+const ALL=[...EASY,...HARD,()=>R.add(rand(1,4))];
+const f=(fn,x)=>fn.m*x+fn.b;
+function eqText(fn){
+  const t=fn.m===1?'x':fn.m===0.5?'x ÷ 2':`${fn.m}x`;
+  return 'y = '+t+(fn.b>0?` + ${fn.b}`:fn.b<0?` − ${-fn.b}`:'');
+}
+function work(fn,x){
+  if(fn.m===0.5) return `${x} ÷ 2`;
+  if(fn.m===1) return fn.b>0?`${x} + ${fn.b}`:`${x} − ${-fn.b}`;
+  return `${fn.m} × ${x}`+(fn.b?` + ${fn.b}`:'');
+}
+function validXs(fn,lo,hi,ylo=0,yhi=10){
+  const xs=[];for(let x=lo;x<=hi;x++){const y=f(fn,x);if(Number.isInteger(y)&&y>=ylo&&y<=yhi)xs.push(x);}return xs;
+}
+function distinctRules(count,pool){
+  const out=[],seen=new Set();let guard=0;
+  while(out.length<count&&guard++<500){const fn=pick(pool)();if(seen.has(fn.name))continue;seen.add(fn.name);out.push(fn);}
+  return out;
+}
+
+/* ================= graph (first quadrant 0–10) ================= */
+const X0=40,Y0=320,U=28;
+const GX=x=>X0+x*U, GY=y=>Y0-y*U;
+function lineEnds(fn){
+  const xa=Math.max(0,-fn.b/fn.m), xb=Math.min(10,(10-fn.b)/fn.m);
+  return [xa,xb];
+}
+function graphHTML(o={}){
+  let s=`<svg id="grid" class="graph" viewBox="0 0 350 350" tabindex="${o.tappable?0:-1}" role="${o.tappable?'application':'img'}" aria-label="${o.tappable?'Coordinate grid. Tap a point, or use arrow keys and press Enter.':'Coordinate grid with a line'}">`;
+  s+=`<defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrfill"/></marker>
+    <marker id="axarr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="axfill"/></marker>
+  </defs>`;
+  if(o.guideX!=null) s+=`<rect class="guide-col" x="${GX(o.guideX)-U/2}" y="${GY(10)}" width="${U}" height="${10*U}" rx="6"/>`;
+  for(let i=0;i<=10;i++){
+    s+=`<line class="grid" x1="${GX(i)}" y1="${GY(0)}" x2="${GX(i)}" y2="${GY(10)}"/>`;
+    s+=`<line class="grid" x1="${GX(0)}" y1="${GY(i)}" x2="${GX(10)}" y2="${GY(i)}"/>`;
+  }
+  s+=`<line class="axis" x1="${GX(0)}" y1="${GY(0)}" x2="${GX(10)+14}" y2="${GY(0)}" marker-end="url(#axarr)"/>`;
+  s+=`<line class="axis" x1="${GX(0)}" y1="${GY(0)}" x2="${GX(0)}" y2="${GY(10)-14}" marker-end="url(#axarr)"/>`;
+  for(let i=0;i<=10;i++){
+    s+=`<text class="tick" x="${GX(i)}" y="${GY(0)+18}" text-anchor="middle">${i}</text>`;
+    if(i>0) s+=`<text class="tick" x="${GX(0)-8}" y="${GY(i)+4}" text-anchor="end">${i}</text>`;
+  }
+  s+=`<text class="axlabel" x="${GX(10)+18}" y="${GY(0)+5}">x</text>`;
+  s+=`<text class="axlabel" x="${GX(0)-5}" y="${GY(10)-18}">y</text>`;
+  if(o.fn&&o.line){
+    const [xa,xb]=lineEnds(o.fn);
+    s+=`<path class="fline ${o.animate?'draw':''}" pathLength="1" d="M${GX(xa)},${GY(f(o.fn,xa))} L${GX(xb)},${GY(f(o.fn,xb))}" ${o.animate?'':'marker-end="url(#arr)"'}/>`;
+  }
+  if(o.guide){
+    const {x,y}=o.guide;
+    s+=`<line class="guide" x1="${GX(x)}" y1="${GY(0)}" x2="${GX(x)}" y2="${GY(y)}"/>`;
+    s+=`<line class="guide" x1="${GX(x)}" y1="${GY(y)}" x2="${GX(0)}" y2="${GY(y)}"/>`;
+  }
+  (o.marks||[]).forEach(m=>{
+    if(m.kind==='wrong'){
+      const cx=GX(m.x),cy=GY(m.y),d=7;
+      s+=`<line class="wrong" x1="${cx-d}" y1="${cy-d}" x2="${cx+d}" y2="${cy+d}"/><line class="wrong" x1="${cx-d}" y1="${cy+d}" x2="${cx+d}" y2="${cy-d}"/>`;
+    }else if(m.kind==='ghost'){
+      s+=`<circle class="ghost" cx="${GX(m.x)}" cy="${GY(m.y)}" r="9"/>`;
+    }else{
+      s+=`<circle class="${m.kind==='off'?'pt-off':'pt'} ${m.pop?'pop':''}" cx="${GX(m.x)}" cy="${GY(m.y)}" r="8"/>`;
+    }
+    if(m.label) s+=labelSVG(m.x,m.y,'ptlabel');
+  });
+  s+=`<g id="preview"></g>`;
+  s+=`<g id="plane" class="plane"><path d="M14,0 L-8,-3.5 L-12,-3.5 L-10,0 L-12,3.5 L-8,3.5 Z M3,0 L-4,-12 L-8,-12 L-5,0 L-8,12 L-4,12 Z M-8,0 L-12,-6 L-14,-6 L-12,0 L-14,6 L-12,6 Z"/></g>`;
+  return s+'</svg>';
+}
+function labelSVG(x,y,cls){
+  const right=x>=7, below=y>=9;
+  return `<text class="${cls}" x="${GX(x)+(right?-13:13)}" y="${below?GY(y)+24:GY(y)-12}" text-anchor="${right?'end':'start'}">${pair(x,y)}</text>`;
+}
+function flyPlane(fn){
+  const g=document.getElementById('plane'); if(!g) return;
+  const [xa,xb]=lineEnds(fn);
+  const ang=Math.atan2(-fn.m,1)*180/Math.PI;
+  const place=t=>{const x=xa+(xb-xa)*t,y=f(fn,x);g.setAttribute('transform',`translate(${GX(x)},${GY(y)}) rotate(${ang})`);};
+  g.style.opacity=1;
+  if(reduceMotion){place(1);return;}
+  const start=performance.now(),dur=1900;
+  const step=now=>{const t=Math.min(1,(now-start)/dur);place(t);if(t<1&&document.body.contains(g))requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+/* tap / keyboard handling on the grid */
+function attachGrid(onTap){
+  const svg=document.getElementById('grid'); if(!svg) return;
+  const pv=document.getElementById('preview');
+  const show=p=>{pv.innerHTML=p?`<circle class="pv" cx="${GX(p.x)}" cy="${GY(p.y)}" r="10"/>`+labelSVG(p.x,p.y,'pvlabel'):'';};
+  const toGrid=e=>{
+    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+    const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const gx=Math.round((p.x-X0)/U),gy=Math.round((Y0-p.y)/U);
+    if(gx<0||gx>10||gy<0||gy>10) return null;
+    return {x:gx,y:gy};
+  };
+  svg.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')show(toGrid(e));});
+  svg.addEventListener('pointerleave',()=>show(null));
+  svg.addEventListener('click',e=>{const p=toGrid(e);if(p){S.gridFocus=false;onTap(p.x,p.y);}});
+  svg.addEventListener('focus',()=>show(S.cursor));
+  svg.addEventListener('blur',()=>show(null));
+  svg.addEventListener('keydown',e=>{
+    const c=S.cursor,k=e.key;
+    if(k==='ArrowRight')c.x=Math.min(10,c.x+1);
+    else if(k==='ArrowLeft')c.x=Math.max(0,c.x-1);
+    else if(k==='ArrowUp')c.y=Math.min(10,c.y+1);
+    else if(k==='ArrowDown')c.y=Math.max(0,c.y-1);
+    else if(k==='Enter'||k===' '){e.preventDefault();S.gridFocus=true;onTap(c.x,c.y);return;}
+    else return;
+    e.preventDefault();show(c);
+  });
+  if(S.gridFocus){svg.focus();show(S.cursor);}
+}
+
+/* ================= shared UI ================= */
+function routeHTML(done,total){
+  const pct=total?done/total:0;let wps='';
+  for(let i=0;i<=total;i++) wps+=`<div class="wp ${i<=done?'done':''}" style="left:calc(12px + (100% - 24px) * ${i/total})"></div>`;
+  return `<div class="route" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}" aria-label="${done} of ${total} done">
+    <div class="track"></div><div class="flown" style="width:calc((100% - 24px) * ${pct})"></div>${wps}
+    <div class="rplane" style="left:calc(12px + (100% - 24px) * ${pct})" aria-hidden="true">✈️</div></div>`;
+}
+function topbar(leg,name){
+  return `<div class="topbar"><div><div class="levelname">Leg ${leg} of 3</div><h2>${name}</h2></div>
+    <div class="stars" aria-label="${S.scores[leg-1]} stars">⭐ ${S.scores[leg-1]} / ${S.totals[leg-1]}</div></div>`;
+}
+function ruleBanner(fn){
+  return `<div class="rulebanner"><div class="rwords">Rule: ${fn.name}</div><div class="eqbig">${eqText(fn)}</div></div>`;
+}
+function fbHTML(fb){
+  if(!fb) return '';
+  return `<div class="fb ${fb.good?'good':'bad'}" role="status"><span class="icon">${fb.good?'✓':'✗'} ${fb.head||(fb.good?'Yes!':'Not quite.')}</span>${fb.text}</div>`;
+}
+/* on-screen number pad */
+function keypadHTML(){
+  let k='';[1,2,3,4,5,6,7,8,9].forEach(d=>k+=`<button onclick="kp('${d}')" aria-label="${d}">${d}</button>`);
+  k+=`<button onclick="kp('del')" aria-label="Erase">⌫</button><button onclick="kp('0')" aria-label="0">0</button><button class="ok" onclick="kp('ok')">Check</button>`;
+  return `<div class="keypad">${k}</div>`;
+}
+function kp(k){
+  if(!S.keypadOn||S.locked) return;
+  if(k==='ok'){S.onEnter&&S.onEnter();return;}
+  if(k==='del') S.entry=S.entry.slice(0,-1);
+  else if(S.entry.length<2) S.entry=(S.entry==='0'?'':S.entry)+k;
+  const d=document.getElementById('kpd'); if(d) d.textContent=S.entry||'?';
+}
+document.addEventListener('keydown',e=>{
+  if(!S||!S.keypadOn||e.target.id==='grid') return;
+  if(/^[0-9]$/.test(e.key)) kp(e.key);
+  else if(e.key==='Backspace'){e.preventDefault();kp('del');}
+  else if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();kp('ok');}
+});
+
+/* ================= game state ================= */
+let S;
+const app=document.getElementById('app');
+function newGame(){
+  S={scores:[0,0,0],totals:[8,8,6],entry:'',keypadOn:false,locked:false,cursor:{x:0,y:0},gridFocus:false};
+}
+function showStart(){
+  newGame();
+  app.innerHTML=`<div class="card">
+    <h1>Function Flight ✈️</h1>
+    <p>A <b>rule</b> turns an input number (x) into an output number (y). Fly three short legs to practice rules and graphs.</p>
+    <ol class="legs">
+      <li>Run numbers through the rule machine.</li>
+      <li>Plot your points on the grid.</li>
+      <li>Find points on the flight path and decide if a point is on it.</li>
+    </ol>
+    <p class="muted">Get it right on the first try to earn a ⭐.</p>
+    <div class="btnrow"><button class="primary" onclick="startL1()">Start flight</button></div>
+  </div>`;
+}
+
+/* ================= Leg 1: Rule Machine ================= */
+function startL1(){
+  const fns=[pick(EASY)(),pick(HARD)()];
+  S.l1={fns,fi:0,tables:fns.map(fn=>shuffle(validXs(fn,0,8)).slice(0,4).sort((a,b)=>a-b)),rows:null,fb:null,solving:null};
+  S.l1.rows=S.l1.tables[0].map(x=>({x,done:false,tries:0}));
+  renderL1();
+}
+function renderL1(){
+  const L=S.l1,fn=L.fns[L.fi];
+  const ai=L.solving!=null?L.solving:L.rows.findIndex(r=>!r.done);
+  const allDone=L.solving==null&&L.rows.every(r=>r.done);
+  const cur=ai>=0?L.rows[ai]:null;
+  S.keypadOn=!!cur&&L.solving==null;
+  S.entry='';
+  S.onEnter=checkL1;
+  const outBox=L.solving!=null
+    ?`<div class="mbox out pop">${f(fn,cur.x)}</div>`
+    :cur?`<div class="mbox out" id="kpd">?</div>`:`<div class="mbox out">✓</div>`;
+  let rows='';
+  L.rows.forEach((r,i)=>{
+    const y=f(fn,r.x),showWork=r.done||r.tries>0;
+    rows+=`<tr class="${i===ai&&!allDone?'active':''}"><td>${r.x}</td>
+      <td class="work">${showWork?work(fn,r.x)+(r.done||r.tries>=2?' = '+y:' = ?'):''}</td>
+      <td class="filled">${r.done?y:(i===ai?'?':'')}</td>
+      <td class="filled">${r.done?pair(r.x,y):''}</td></tr>`;
+  });
+  app.innerHTML=`<div class="card">
+    ${topbar(1,'Rule machine')}
+    ${routeHTML(L.fi*4+L.rows.filter(r=>r.done).length,8)}
+    ${ruleBanner(fn)}
+    <div class="machine">
+      <div class="mcol"><div class="mlabel">input x</div><div class="mbox in">${cur?cur.x:'–'}</div></div>
+      <div class="marrow" aria-hidden="true">➜</div>
+      <div class="mcol"><div class="mlabel">rule</div><div class="mbox gear">⚙️ ${fn.name}</div></div>
+      <div class="marrow" aria-hidden="true">➜</div>
+      <div class="mcol"><div class="mlabel">output y</div>${outBox}</div>
+    </div>
+    ${S.keypadOn?keypadHTML():''}
+    ${allDone?`<div class="btnrow"><button class="primary" onclick="nextL1()">${L.fi===0?'Next rule':'Finish leg 1'}</button></div>`:''}
+    ${fbHTML(L.fb)}
+    <div class="split">
+      <div class="tablewrap"><table>
+        <thead><tr><th>x<small>input</small></th><th>Use the rule</th><th>y<small>output</small></th><th>(x, y)<small>ordered pair</small></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div><div class="graphtitle">Where your points are going</div>
+        ${graphHTML({marks:L.rows.map((r,i)=>r.done?{x:r.x,y:f(fn,r.x),label:i===L.solving,pop:i===L.solving}:null).filter(Boolean)})}</div>
+    </div>
+  </div>`;
+}
+function checkL1(){
+  const L=S.l1,fn=L.fns[L.fi];
+  const idx=L.rows.findIndex(r=>!r.done); if(idx<0) return;
+  const r=L.rows[idx],y=f(fn,r.x);
+  if(S.entry===''){L.fb={good:false,head:'Oops.',text:' Tap the number pad to type the output.'};renderL1();return;}
+  const v=parseInt(S.entry,10);
+  if(v===y){
+    if(r.tries===0) S.scores[0]++;
+    r.done=true;L.solving=idx;S.locked=true;
+    L.fb={good:true,text:` ${work(fn,r.x)} = ${y}. The ordered pair is ${pair(r.x,y)}.`};
+    renderL1();
+    setTimeout(()=>{L.solving=null;S.locked=false;renderL1();},reduceMotion?300:950);
+  }else{
+    r.tries++;
+    L.fb={good:false,text:r.tries===1?` Use the rule on ${r.x}: ${work(fn,r.x)} = ? Try again.`:` ${work(fn,r.x)} = ${y}. Type ${y} and tap Check.`};
+    renderL1();
+  }
+}
+function nextL1(){
+  const L=S.l1;L.fb=null;
+  if(L.fi===0){L.fi=1;L.rows=L.tables[1].map(x=>({x,done:false,tries:0}));renderL1();}
+  else{
+    S.keypadOn=false;
+    app.innerHTML=`<div class="card">
+      <div class="levelname">Leg 1 complete</div><h2>⭐ ${S.scores[0]} / ${S.totals[0]}</h2>
+      <p class="keyidea">A rule gives each input (x) exactly one output (y). Each input and its output make an ordered pair (x, y).</p>
+      <p>Next, you'll plot your ordered pairs on a grid.</p>
+      <div class="btnrow"><button class="primary" onclick="startL2()">Start leg 2</button></div></div>`;
+  }
+}
+
+/* ================= Leg 2: Plot the Points ================= */
+function startL2(){
+  S.l2={round:0,plotted:[],tries:0,wrong:null,fb:null,connected:false,justPlotted:false};
+  S.cursor={x:0,y:0};renderL2();
+}
+function renderL2(animate){
+  const L=S.l2,fn=S.l1.fns[L.round],xs=S.l1.tables[L.round];
+  const pairs=xs.map(x=>({x,y:f(fn,x)}));
+  const idx=L.plotted.length,target=pairs[idx];
+  S.keypadOn=false;
+  const chips=pairs.map((p,i)=>`<span class="chip ${i<idx?'done':i===idx?'now':''}">${pair(p.x,p.y)}</span>`).join('');
+  const marks=L.plotted.map((p,i)=>({x:p.x,y:p.y,pop:L.justPlotted&&i===idx-1}));
+  if(L.wrong) marks.push({x:L.wrong.x,y:L.wrong.y,kind:'wrong'});
+  let task,controls='';
+  if(target) task=`Tap the grid to plot <span class="pairbig">${pair(target.x,target.y)}</span>`;
+  else if(!L.connected){task='All points plotted!';controls=`<div class="btnrow"><button class="primary" onclick="connectL2()">Connect the dots ✈️</button></div>`;}
+  else{task='Your points make a straight line!';controls=`<div class="btnrow"><button class="primary" onclick="nextL2()">${L.round===0?'Next rule':'Finish leg 2'}</button></div>`;}
+  app.innerHTML=`<div class="card">
+    ${topbar(2,'Plot the points')}
+    ${routeHTML(L.round*4+idx,8)}
+    ${ruleBanner(fn)}
+    <div class="chips">${chips}</div>
+    <div class="task">${task}</div>
+    ${graphHTML({tappable:!!target,fn,line:L.connected,animate,marks})}
+    ${target?'<div class="tapnote">Go across to x first, then up to y.</div>':''}
+    ${controls}
+    ${fbHTML(L.fb)}
+  </div>`;
+  L.justPlotted=false;
+  if(target) attachGrid(tapL2);
+  if(animate) setTimeout(()=>flyPlane(fn),reduceMotion?0:900);
+}
+function tapL2(gx,gy){
+  const L=S.l2,fn=S.l1.fns[L.round],x=S.l1.tables[L.round][L.plotted.length];
+  const y=f(fn,x);
+  if(gx===x&&gy===y){
+    if(L.tries===0) S.scores[1]++;
+    L.plotted.push({x,y});L.tries=0;L.wrong=null;L.justPlotted=true;
+    L.fb={good:true,text:` ${pair(x,y)} is plotted.`};
+  }else{
+    L.tries++;L.wrong={x:gx,y:gy};
+    let tip;
+    if(gx===y&&gy===x&&x!==y) tip=` You tapped ${pair(gx,gy)}. The numbers got switched. Go across ${x} first, then up ${y}.`;
+    else if(gx===x) tip=` You found x = ${x}. Now go up to ${y}.`;
+    else tip=` You tapped ${pair(gx,gy)}. Start at 0, go across to ${x} on the x-axis, then up ${y}.`;
+    L.fb={good:false,text:tip};
+  }
+  renderL2();
+}
+function connectL2(){
+  const L=S.l2;L.connected=true;
+  L.fb={good:true,head:'Look!',text:' The points line up in a straight line. Every point on this line follows the rule.'};
+  renderL2(true);
+}
+function nextL2(){
+  const L=S.l2;
+  if(L.round===0){S.l2={round:1,plotted:[],tries:0,wrong:null,fb:null,connected:false,justPlotted:false};renderL2();}
+  else app.innerHTML=`<div class="card">
+    <div class="levelname">Leg 2 complete</div><h2>⭐ ${S.scores[1]} / ${S.totals[1]}</h2>
+    <p class="keyidea">To graph a rule: make a table, plot the points, then connect them to make a line.</p>
+    <div class="btnrow"><button class="primary" onclick="startL3()">Start leg 3</button></div></div>`;
+}
+
+/* ================= Leg 3: Flight Path Check (find it + on the path) ================= */
+function startL3(){
+  const fns=distinctRules(6,ALL);
+  const checkKinds=shuffle([true,false,Math.random()<.5]);
+  const qs=fns.map((fn,i)=>{
+    if(i%2===0){
+      const xs=validXs(fn,1,9,1,10);
+      return {type:'find',fn,x:pick(xs.length?xs:validXs(fn,0,10))};
+    }
+    const on=checkKinds[(i-1)/2];let px,py,guard=0;
+    if(on){const xs=validXs(fn,1,9,1,10);px=pick(xs.length?xs:validXs(fn,0,10));py=f(fn,px);}
+    else{const xs=validXs(fn,1,9,0,10);do{px=pick(xs);py=f(fn,px)+pick([-2,-1,1,2]);guard++;}while((py<0||py>10)&&guard<100);}
+    return {type:'check',fn,px,py,on};
+  });
+  S.l3={qs,qi:0,done:false,tries:0,wrong:null,fb:null};
+  S.cursor={x:0,y:0};renderL3();
+}
+function renderL3(){
+  const L=S.l3,q=L.qs[L.qi];
+  S.keypadOn=false;
+  const nextBtn=`<div class="btnrow"><button class="primary" onclick="nextL3()">${L.qi<L.qs.length-1?'Next question':'Land the plane'}</button></div>`;
+  const head=`${topbar(3,'Flight path check')}${routeHTML(L.qi+(L.done?1:0),L.qs.length)}`;
+  if(q.type==='find'){
+    const y=f(q.fn,q.x),marks=[];
+    if(L.wrong&&!L.done) marks.push({x:L.wrong.x,y:L.wrong.y,kind:'wrong'});
+    if(L.done) marks.push({x:q.x,y,label:true,pop:true});
+    app.innerHTML=`<div class="card">${head}
+      ${ruleBanner(q.fn)}
+      <div class="task">${L.done?`When x is ${q.x}, y is ${y}.`:`Tap the point on the path where <span class="pairbig">x is ${q.x}</span>.`}</div>
+      ${graphHTML({tappable:!L.done,fn:q.fn,line:true,marks,guideX:(L.tries>0||L.done)?q.x:null,guide:L.done?{x:q.x,y}:null})}
+      ${!L.done?'<div class="tapnote">Find x on the bottom, then go straight up to the line.</div>':nextBtn}
+      ${fbHTML(L.fb)}</div>`;
+    if(!L.done) attachGrid(tapFind);
+  }else{
+    const ly=f(q.fn,q.px),marks=[];
+    if(L.done){
+      marks.push({x:q.px,y:q.py,kind:q.on?'pt':'off',label:true,pop:true});
+      if(!q.on) marks.push({x:q.px,y:ly,kind:'ghost'});
+    }
+    app.innerHTML=`<div class="card">${head}
+      ${ruleBanner(q.fn)}
+      <div class="task">Is <span class="pairbig">${pair(q.px,q.py)}</span> on the flight path?</div>
+      ${graphHTML({fn:q.fn,line:true,marks})}
+      ${L.done?nextBtn:`<div class="btnrow"><button class="primary" onclick="checkOn(true)">Yes, it's on the path</button><button class="secondary" onclick="checkOn(false)">No, it's off the path</button></div>`}
+      ${fbHTML(L.fb)}</div>`;
+    if(L.done) setTimeout(()=>flyPlane(q.fn),reduceMotion?0:250);
+  }
+}
+function tapFind(gx,gy){
+  const L=S.l3,q=L.qs[L.qi],y=f(q.fn,q.x);
+  if(gx===q.x&&gy===y){
+    if(L.tries===0) S.scores[2]++;
+    L.done=true;L.wrong=null;
+    L.fb={good:true,text:` The point is ${pair(q.x,y)}. Look left to the y-axis to read y = ${y}.`};
+  }else{
+    L.tries++;L.wrong={x:gx,y:gy};
+    L.fb={good:false,text:gx===q.x
+      ?` Good, you're at x = ${q.x}. Now move up or down until you touch the line.`
+      :` Find ${q.x} on the x-axis (the bottom). The shaded column shows where to look. Then go up to the line.`};
+  }
+  renderL3();
+}
+function checkOn(choice){
+  const L=S.l3,q=L.qs[L.qi],ly=f(q.fn,q.px);
+  const good=choice===q.on; if(good) S.scores[2]++;
+  L.done=true;
+  L.fb={good,text:q.on
+    ?` ${pair(q.px,q.py)} is on the path. Check with the rule: ${work(q.fn,q.px)} = ${q.py}. It follows the rule!`
+    :` ${pair(q.px,q.py)} is off the path. The rule says ${work(q.fn,q.px)} = ${ly}, so the path is at ${pair(q.px,ly)}, not ${pair(q.px,q.py)}.`};
+  renderL3();
+}
+function nextL3(){
+  const L=S.l3;
+  if(L.qi<L.qs.length-1){L.qi++;L.done=false;L.tries=0;L.wrong=null;L.fb=null;renderL3();}
+  else app.innerHTML=`<div class="card">
+    <div class="levelname">Leg 3 complete</div><h2>⭐ ${S.scores[2]} / ${S.totals[2]}</h2>
+    <p class="keyidea">To read a graph, start at x on the bottom, go straight up to the line, then look left to read y. Points on the line follow the rule. Points off the line do not.</p>
+    <div class="btnrow"><button class="primary" onclick="showFinal()">See your score</button></div></div>`;
+}
+
+/* ================= Final ================= */
+function showFinal(){
+  const total=S.scores.reduce((a,b)=>a+b,0),max=S.totals.reduce((a,b)=>a+b,0),pct=total/max;
+  const big=pct>=.9?'⭐⭐⭐':pct>=.7?'⭐⭐':'⭐';
+  const msg=pct>=.9?'Smooth landing! You are a graphing pilot.'
+    :pct>=.7?'Nice flying! Play again to get even more stars.'
+    :'Good practice! Fly again and you will get new rules and points.';
+  app.innerHTML=`<div class="card" style="text-align:center">
+    ${routeHTML(1,1)}
+    <h1>You landed! 🛬</h1>
+    <div class="bigstars" aria-hidden="true">${big}</div>
+    <div class="big">${total} / ${max}</div>
+    <p style="margin-top:10px">${msg}</p>
+    <ul class="scores" style="text-align:left;display:inline-block">
+      <li>Rule machine: ${S.scores[0]} / ${S.totals[0]}</li>
+      <li>Plot the points: ${S.scores[1]} / ${S.totals[1]}</li>
+      <li>Flight path check: ${S.scores[2]} / ${S.totals[2]}</li>
+    </ul>
+    <div class="btnrow"><button class="primary" onclick="newGame();startL1()">Play again</button></div>
+  </div>`;
+}
+
+showStart();
+</script>
+</body>
+</html>
